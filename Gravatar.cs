@@ -1,6 +1,7 @@
-﻿using System.Web.Mvc;
-using System.Text;
+﻿using System;
 using System.Web;
+using System.Text;
+using System.Web.Mvc;
 using System.Collections.Generic;
 
 namespace System.Web.Mvc
@@ -67,23 +68,58 @@ namespace System.Web.Mvc
 		X
 	}
 
+	/// <summary>
+	/// Generates a Gravatar url
+	/// </summary>
 	public class GravatarGenerator
 	{
+		/// <summary>
+		/// Email to generate a Gravatar image for
+		/// </summary>
 		private string _Email { get; set; }
+		/// <summary>
+		/// The size of the image in pixels. Defaults to 80px
+		/// </summary>
 		private int _Size { get; set; }
+		/// <summary>
+		/// A default image to fall back to.
+		/// </summary>
 		private string _DefaultImage { get; set; }
+		/// <summary>
+		/// Wether to append a file ending to the url (.jpg).
+		/// </summary>
 		private bool _AppendFileType { get; set; }
+		/// <summary>
+		/// Force the default image to display.
+		/// </summary>
 		private bool _ForceDefaultImage { get; set; }
+		/// <summary>
+		/// Image rating to display for. See <see cref="Gravatar.GravatarRating"/> for details.
+		/// </summary>
 		private GravatarRating _DisplayRating { get; set; }
+		/// <summary>
+		/// How to generate a default image if no gravatar exists for the email. See <see cref="Gravatar.DefaultGravatar"/> for details.
+		/// </summary>
 		private DefaultGravatar _DefaultDisplay { get; set; }
+		/// <summary>
+		/// If https should be used.
+		/// </summary>
 		private bool _UseHttps { get; set; }
 
+		/// <summary>
+		/// Creates a GravatarGenerator.
+		/// </summary>
+		/// <param name="email">Email to generate Gravatar for.</param>
+		/// <param name="useHttps">Wether to use https or not.</param>
 		public GravatarGenerator(string email, bool useHttps)
 		{
 			_Email = email;
 			_UseHttps = useHttps;
 		}
 
+		/// <summary>
+		/// Gets the Url for the Gravatar
+		/// </summary>
 		public string Url
 		{
 			get
@@ -100,6 +136,10 @@ namespace System.Web.Mvc
 			}
 		}
 
+		/// <summary>
+		/// Sets the size of the Gravatar.
+		/// </summary>
+		/// <param name="size">Size in pixels between 1 and 512.</param>
 		public GravatarGenerator Size(int size)
 		{
 			if (size < 0 || size > 512)
@@ -109,30 +149,48 @@ namespace System.Web.Mvc
 			return this;
 		}
 
+		/// <summary>
+		/// A default image to fall back to.
+		/// </summary>
+		/// <param name="defaultImage">A url to use as a default image.</param>
 		public GravatarGenerator DefaultImage(string defaultImage)
 		{
 			this._DefaultImage = defaultImage;
 			return this;
 		}
 
+		/// <summary>
+		/// How to generate a default image if no gravatar exists for the email. See <see cref="Gravatar.DefaultGravatar"/> for details.
+		/// </summary>
+		/// <param name="defaultImage">What type of default image to generate.</param>
 		public GravatarGenerator DefaultImage(DefaultGravatar defaultImage)
 		{
 			this._DefaultDisplay = defaultImage;
 			return this;
 		}
 
+		/// <summary>
+		/// Image rating to display for. See <see cref="Gravatar.GravatarRating"/> for details.
+		/// </summary>
+		/// <param name="defaultImage">The rating to filter Gravatars for.</param>
 		public GravatarGenerator Rating(GravatarRating rating)
 		{
 			this._DisplayRating = rating;
 			return this;
 		}
 
+		/// <summary>
+		/// Wether to append a file ending to the url (.jpg).
+		/// </summary>
 		public GravatarGenerator AppendFileType()
 		{
 			this._AppendFileType = true;
 			return this;
 		}
 
+		/// <summary>
+		/// Force the default image to display.
+		/// </summary>
 		public GravatarGenerator ForceDefaultImage()
 		{
 			this._ForceDefaultImage = true;
@@ -168,6 +226,9 @@ namespace System.Web.Mvc
 
 		private string GetDefaultImageParam()
 		{
+			if(!string.IsNullOrWhiteSpace(this._DefaultImage))
+				return "d=" + HttpUtility.UrlEncode(this._DefaultImage);
+
 			switch (this._DefaultDisplay)
 			{
 				case DefaultGravatar.IdentIcon: return "d=identicon";
@@ -176,7 +237,7 @@ namespace System.Web.Mvc
 				case DefaultGravatar.None: return "d=404";
 				case DefaultGravatar.Retro: return "d=retro";
 				case DefaultGravatar.Wavatar: return "d=wavatar";
-				default: return string.IsNullOrWhiteSpace(this._DefaultImage) ? null : "d=" + HttpUtility.UrlEncode(this._DefaultImage); ;
+				default: return null;
 			}
 		}
 
@@ -216,22 +277,50 @@ namespace System.Web.Mvc
 
 	public static class GravatarExtension
 	{
+		/// <summary>
+		/// Gets a <see cref="Gravatar.GravatarGenerator"/> object.
+		/// </summary>
+		/// <param name="helper">UrlHelper object.</param>
+		/// <param name="email">Email to generate Gravatar for.</param>
+		/// <returns>A GravatarGenerator object.</returns>
 		public static GravatarGenerator GravatarGenerator(this UrlHelper helper, string email)
 		{
 			return new GravatarGenerator(email, helper.RequestContext.HttpContext.Request.IsSecureConnection);
 		}
 
+		/// <summary>
+		/// Gets a <see cref="Gravatar.GravatarGenerator"/> object.
+		/// </summary>
+		/// <param name="helper">UrlHelper objec.t</param>
+		/// <param name="email">Email to generate Gravatar for.</param>
+		/// <param name="size">The size in pixels, between 1 and 512.</param>
+		/// <returns>A GravatarGenerator object</returns>
 		public static GravatarGenerator GravatarGenerator(this UrlHelper helper, string email, int size)
 		{
 			return new GravatarGenerator(email, helper.RequestContext.HttpContext.Request.IsSecureConnection).Size(size);
 		}
 
+		/// <summary>
+		/// Gets a Gravatar Url as string.
+		/// </summary>
+		/// <param name="helper">UrlHelper object.</param>
+		/// <param name="email">Email to generate Gravatar for.</param>
+		/// <param name="size">The size in pixels, between 1 and 512.</param>
+		/// <returns>A Gravatar Url</returns>
 		public static string Gravatar(this UrlHelper helper, string email, int size)
 		{
 			GravatarGenerator gravatar = new GravatarGenerator(email, helper.RequestContext.HttpContext.Request.IsSecureConnection).Size(size);
 			return gravatar.Url;
 		}
 
+		/// <summary>
+		/// Gets a Gravatar Url as string.
+		/// </summary>
+		/// <param name="helper">UrlHelper object.</param>
+		/// <param name="email">Email to generate Gravatar for.</param>
+		/// <param name="size">The size in pixels, between 1 and 512.</param>
+		/// <param name="defaultImage">A default Gravatar generation policy. See <see cref="Gravatar.DefaultGravatar"/> for details.</param>
+		/// <returns>A Gravatar Url</returns>
 		public static string Gravatar(this UrlHelper helper, string email, int size, DefaultGravatar defaultImage)
 		{
 			GravatarGenerator gravatar = new GravatarGenerator(email, helper.RequestContext.HttpContext.Request.IsSecureConnection)
@@ -240,6 +329,14 @@ namespace System.Web.Mvc
 			return gravatar.Url;
 		}
 
+		/// <summary>
+		/// Gets a Gravatar Url as string.
+		/// </summary>
+		/// <param name="helper">UrlHelper object.</param>
+		/// <param name="email">Email to generate Gravatar for.</param>
+		/// <param name="size">The size in pixels, between 1 and 512.</param>
+		/// <param name="defaultImage">An Url to a default image to use if no Gravatar exists.</param>
+		/// <returns>A Gravatar Url</returns>
 		public static string Gravatar(this UrlHelper helper, string email, int size, string defaultImage)
 		{
 			GravatarGenerator gravatar = new GravatarGenerator(email, helper.RequestContext.HttpContext.Request.IsSecureConnection)
@@ -248,6 +345,15 @@ namespace System.Web.Mvc
 			return gravatar.Url;
 		}
 
+		/// <summary>
+		/// Gets a Gravatar Url as string.
+		/// </summary>
+		/// <param name="helper">UrlHelper object.</param>
+		/// <param name="email">Email to generate Gravatar for.</param>
+		/// <param name="size">The size in pixels, between 1 and 512.</param>
+		/// <param name="defaultImage">A default Gravatar generation policy. See <see cref="Gravatar.DefaultGravatar"/> for details.</param>
+		/// <param name="rating">Image rating to display for. See <see cref="Gravatar.GravatarRating"/> for details.</param>
+		/// <returns>A Gravatar Url</returns>
 		public static string Gravatar(this UrlHelper helper, string email, int size, DefaultGravatar defaultImage, GravatarRating rating)
 		{
 			GravatarGenerator gravatar = new GravatarGenerator(email, helper.RequestContext.HttpContext.Request.IsSecureConnection)
@@ -257,6 +363,15 @@ namespace System.Web.Mvc
 			return gravatar.Url;
 		}
 
+		/// <summary>
+		/// Gets a Gravatar Url as string.
+		/// </summary>
+		/// <param name="helper">UrlHelper object.</param>
+		/// <param name="email">Email to generate Gravatar for.</param>
+		/// <param name="size">The size in pixels, between 1 and 512.</param>
+		/// <param name="defaultImage">An Url to a default image to use if no Gravatar exists.</param>
+		/// <param name="rating">Image rating to display for. See <see cref="Gravatar.GravatarRating"/> for details.</param>
+		/// <returns>A Gravatar Url</returns>
 		public static string Gravatar(this UrlHelper helper, string email, int size, string defaultImage, GravatarRating rating)
 		{
 			GravatarGenerator gravatar = new GravatarGenerator(email, helper.RequestContext.HttpContext.Request.IsSecureConnection)
